@@ -6,7 +6,7 @@ DB_PATH = "outreach.db"
 
 
 def get_connection(db_path: str = DB_PATH) -> sqlite3.Connection:
-    conn = sqlite3.connect(db_path, check_same_thread=False)
+    conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -177,21 +177,20 @@ def _get_or_create_daily_log(date_str: str, db_path: str = DB_PATH) -> None:
 
 
 def increment_daily(field: str, amount: int = 1, db_path: str = DB_PATH) -> None:
-    if field not in {
-        "targets_discovered",
-        "targets_contacted",
-        "replies_received",
-        "meetings_booked",
-    }:
+    field_queries = {
+        "targets_discovered": "UPDATE daily_logs SET targets_discovered = targets_discovered + ? WHERE date = ?",
+        "targets_contacted": "UPDATE daily_logs SET targets_contacted = targets_contacted + ? WHERE date = ?",
+        "replies_received": "UPDATE daily_logs SET replies_received = replies_received + ? WHERE date = ?",
+        "meetings_booked": "UPDATE daily_logs SET meetings_booked = meetings_booked + ? WHERE date = ?",
+    }
+    query = field_queries.get(field)
+    if not query:
         raise ValueError("Unsupported daily log field")
 
     date_str = datetime.utcnow().date().isoformat()
     _get_or_create_daily_log(date_str, db_path)
     with get_connection(db_path) as conn:
-        conn.execute(
-            f"UPDATE daily_logs SET {field} = {field} + ? WHERE date = ?",
-            (amount, date_str),
-        )
+        conn.execute(query, (amount, date_str))
 
 
 def get_today_contacted_count(db_path: str = DB_PATH) -> int:

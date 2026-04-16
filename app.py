@@ -40,6 +40,7 @@ SMTP_CONFIG = {
     "SMTP_PORT": os.getenv("SMTP_PORT", "587"),
     "SMTP_USER": os.getenv("SMTP_USER"),
     "SMTP_PASS": os.getenv("SMTP_PASS"),
+    "SMTP_TO_EMAIL": os.getenv("SMTP_TO_EMAIL", "tushaar@tnairchambers.in"),
 }
 
 init_db(DB_FILE)
@@ -249,7 +250,6 @@ def api_export():
 
 
 if __name__ == '__main__':
-    import threading
     import time
     import webbrowser
 

@@ -46,6 +46,7 @@ def send_daily_summary(db_path: str, smtp_config: Dict) -> None:
     port = int(smtp_config.get("SMTP_PORT", 587))
     user = smtp_config.get("SMTP_USER")
     password = smtp_config.get("SMTP_PASS")
+    recipient = smtp_config.get("SMTP_TO_EMAIL", "tushaar@tnairchambers.in")
 
     if not (host and user and password):
         return
@@ -57,12 +58,12 @@ def send_daily_summary(db_path: str, smtp_config: Dict) -> None:
     msg = MIMEText(body)
     msg["Subject"] = subject
     msg["From"] = user
-    msg["To"] = "tushaar@tnairchambers.in"
+    msg["To"] = recipient
 
     with smtplib.SMTP(host, port, timeout=30) as server:
         server.starttls()
         server.login(user, password)
-        server.sendmail(user, ["tushaar@tnairchambers.in"], msg.as_string())
+        server.sendmail(user, [recipient], msg.as_string())
 
 
 def start_email_scheduler(db_path: str, smtp_config: Dict) -> BackgroundScheduler:

@@ -88,6 +88,12 @@ async function showMessages(id) {
 body.addEventListener('click', async (e) => {
   const btn = e.target.closest('button');
   if (!btn) return;
+  if (btn.dataset.copy !== undefined) {
+    const text = decodeURIComponent(btn.dataset.copy || '');
+    await navigator.clipboard.writeText(text);
+    showToast('Copied');
+    return;
+  }
   const action = btn.dataset.action;
   const id = btn.dataset.id;
 
@@ -132,14 +138,6 @@ body.addEventListener('change', async (e) => {
   });
   showToast('Status updated');
   await loadDailyCount();
-});
-
-body.addEventListener('click', async (e) => {
-  const copyBtn = e.target.closest('button[data-copy]');
-  if (!copyBtn) return;
-  const text = decodeURIComponent(copyBtn.dataset.copy || '');
-  await navigator.clipboard.writeText(text);
-  showToast('Copied');
 });
 
 document.getElementById('runDiscoveryBtn').addEventListener('click', async () => {

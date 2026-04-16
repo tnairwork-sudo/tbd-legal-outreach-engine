@@ -36,6 +36,7 @@ Then edit `.env` with your keys and SMTP credentials.
    - `SMTP_PORT=587`
    - `SMTP_USER=<your gmail>`
    - `SMTP_PASS=<app password>`
+   - `SMTP_TO_EMAIL=tushaar@tnairchambers.in`
 
 ## Daily Workflow
 
