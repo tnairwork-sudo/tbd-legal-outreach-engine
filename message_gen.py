@@ -3,7 +3,7 @@ from typing import Dict
 
 from anthropic import Anthropic
 
-MODEL = "claude-sonnet-4-20250514"
+MODEL = "claude-3-5-sonnet-20241022"
 SIGNOFF = "Tushaar Nair, Advocate, Supreme Court of India, T Nair Chambers"
 
 MESSAGE_PROMPT = f"""Generate three outreach messages in JSON with keys: connection, followup, email.
@@ -28,7 +28,6 @@ Hard constraints:
 - Must end exactly with: {SIGNOFF}
 - Never mention TBD or The Big Dinner
 """
-
 
 def _extract_json(raw: str) -> Dict:
     try:
@@ -68,6 +67,7 @@ def generate_messages(target: Dict, profile: Dict, api_key: str) -> Dict[str, st
     if not api_key:
         base = profile.get("inner_condition") or "Running cross-border legal work is rarely just legal work."
         company = target.get("company") or "your company"
+        name = target.get("name") or ""
         connection = (
             f"{base} The India side of that tends to move fast and quietly.\n"
             f"{SIGNOFF}"
