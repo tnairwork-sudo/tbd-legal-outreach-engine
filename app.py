@@ -46,7 +46,6 @@ SMTP_CONFIG = {
 init_db(DB_FILE)
 scheduler = start_email_scheduler(DB_FILE, SMTP_CONFIG)
 
-
 def _process_target(target_id: int) -> Dict:
     target = get_target(target_id, DB_FILE)
     if not target:
@@ -55,14 +54,10 @@ def _process_target(target_id: int) -> Dict:
     profile = profile_target(target, os.getenv("ANTHROPIC_API_KEY", ""))
     update_profile(target_id, profile, DB_FILE)
 
-    if int(profile.get("fit_score", 0)) > 60:
-        messages = generate_messages(target, profile, os.getenv("ANTHROPIC_API_KEY", ""))
-        replace_messages(target_id, messages, DB_FILE)
-        return {"qualified": True, "fit_score": profile.get("fit_score")}
-
-    replace_messages(target_id, {}, DB_FILE)
-    return {"qualified": False, "fit_score": profile.get("fit_score", 0)}
-
+    # Always generate messages regardless of fit score
+    messages = generate_messages(target, profile, os.getenv("ANTHROPIC_API_KEY", ""))
+    replace_messages(target_id, messages, DB_FILE)
+    return {"qualified": True, "fit_score": profile.get("fit_score", 0)}
 
 def _run_discovery_thread() -> None:
     api_key = os.getenv("SERP_API_KEY", "")
@@ -80,16 +75,13 @@ def _run_discovery_thread() -> None:
 def index():
     return render_template("index.html")
 
-
 @app.route("/api/targets", methods=["GET"])
 def api_targets():
     return jsonify(list_targets(DB_FILE))
 
-
 @app.route("/api/messages/<int:target_id>", methods=["GET"])
 def api_messages(target_id: int):
     return jsonify(get_messages_for_target(target_id, DB_FILE))
-
 
 @app.route("/api/run-discovery", methods=["POST"])
 def api_run_discovery():
@@ -97,14 +89,12 @@ def api_run_discovery():
     thread.start()
     return jsonify({"status": "started"})
 
-
 @app.route("/api/generate/<int:target_id>", methods=["POST"])
 def api_generate(target_id: int):
     result = _process_target(target_id)
     if "error" in result:
         return jsonify(result), 404
     return jsonify(result)
-
 
 @app.route("/api/add-target", methods=["POST"])
 def api_add_target():
@@ -130,7 +120,6 @@ def api_add_target():
     increment_daily("targets_discovered", 1, DB_FILE)
     _process_target(target_id)
     return jsonify({"id": target_id, "status": "created"})
-
 
 @app.route("/api/upload-csv", methods=["POST"])
 def api_upload_csv():
@@ -168,7 +157,6 @@ def api_upload_csv():
 
     return jsonify({"inserted": len(inserted_ids)})
 
-
 @app.route("/api/send/<int:target_id>", methods=["POST"])
 def api_send(target_id: int):
     today_count = get_today_contacted_count(DB_FILE)
@@ -184,7 +172,6 @@ def api_send(target_id: int):
         increment_daily("targets_contacted", 1, DB_FILE)
 
     return jsonify({"linkedin_url": target.get("linkedin_url", ""), "status": "Contacted"})
-
 
 @app.route("/api/update-status/<int:target_id>", methods=["POST"])
 def api_update_status(target_id: int):
@@ -202,7 +189,6 @@ def api_update_status(target_id: int):
 
     return jsonify({"status": status})
 
-
 @app.route("/api/daily-count", methods=["GET"])
 def api_daily_count():
     count = get_today_contacted_count(DB_FILE)
@@ -213,7 +199,6 @@ def api_daily_count():
             "warning": count >= 130,
         }
     )
-
 
 @app.route("/api/export", methods=["GET"])
 def api_export():
@@ -247,7 +232,6 @@ def api_export():
     mem.seek(0)
     filename = f"tbd_outreach_export_{datetime.utcnow().date().isoformat()}.csv"
     return send_file(mem, mimetype="text/csv", as_attachment=True, download_name=filename)
-
 
 if __name__ == '__main__':
     import time
