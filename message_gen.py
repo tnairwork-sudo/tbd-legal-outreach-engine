@@ -6,7 +6,15 @@ from anthropic import Anthropic
 MODEL = "claude-3-5-sonnet-20241022"
 SIGNOFF = "Tushaar Nair, Advocate, Supreme Court of India, T Nair Chambers"
 
-MESSAGE_PROMPT = f"""Generate three outreach messages in JSON with keys: connection, followup, email.
+BIG_DINNER_CITIES = {"mumbai", "bombay", "delhi", "new delhi"}
+
+BIG_DINNER_POSTSCRIPT = (
+    "Also -- I host a small dinner in the city every few weeks, "
+    "just a handful of people thinking seriously about law, business, and India. "
+    "No agenda, no decks. If that sounds like something you'd enjoy, happy to put you on the list."
+)
+
+MESSAGE_PROMPT_BASE = """Generate three outreach messages in JSON with keys: connection, followup, email.
 
 Voice and tone -- this is non-negotiable:
 - Write as one peer to another. No hierarchy, no selling, no asking for anything in message 1.
@@ -25,9 +33,16 @@ Hard constraints:
 - Must never include the word networking
 - Must never use em dashes
 - Must never sound like legal marketing or BD copy
-- Must end exactly with: {SIGNOFF}
+- Must end exactly with: {signoff}
 - Never mention TBD or The Big Dinner
 """
+
+
+def _is_big_dinner_city(location: str) -> bool:
+    if not location:
+        return False
+    return any(city in location.lower() for city in BIG_DINNER_CITIES)
+
 
 def _extract_json(raw: str) -> Dict:
     try:
@@ -63,11 +78,23 @@ def _enforce_connection_length(connection: str) -> str:
     return f"{body}\n{SIGNOFF}"
 
 
+def _append_big_dinner(email: str) -> str:
+    if SIGNOFF in email:
+        return email.replace(
+            f"\n\n{SIGNOFF}",
+            f"\n\n{BIG_DINNER_POSTSCRIPT}\n\n{SIGNOFF}",
+            1,
+        )
+    return f"{email}\n\n{BIG_DINNER_POSTSCRIPT}\n\n{SIGNOFF}"
+
+
 def generate_messages(target: Dict, profile: Dict, api_key: str) -> Dict[str, str]:
+    location = target.get("location", "")
+    big_dinner = _is_big_dinner_city(location)
+    company = target.get("company") or "your company"
+
     if not api_key:
         base = profile.get("inner_condition") or "Running cross-border legal work is rarely just legal work."
-        company = target.get("company") or "your company"
-        name = target.get("name") or ""
         connection = (
             f"{base} The India side of that tends to move fast and quietly.\n"
             f"{SIGNOFF}"
@@ -77,14 +104,16 @@ def generate_messages(target: Dict, profile: Dict, api_key: str) -> Dict[str, st
             "Not a pitch -- just found it worth a short conversation if the timing is right for you.\n"
             f"{SIGNOFF}"
         )
-        email = (
+        email_body = (
             f"The India-linked legal layer for companies at {company}'s stage tends to concentrate quietly -- "
             "transaction exposure, regulatory timing, cross-border enforcement gaps -- "
             "usually showing up fully formed at the worst possible moment.\n\n"
             "Happy to share a few honest observations on where that tends to sit for teams in your position, "
-            "no agenda attached. Only worth it if it is actually useful to you.\n\n"
-            f"{SIGNOFF}"
+            "no agenda attached. Only worth it if it is actually useful to you."
         )
+        email = f"{email_body}\n\n{SIGNOFF}"
+        if big_dinner:
+            email = _append_big_dinner(email_body)
         return {
             "connection": _enforce_connection_length(_normalize_message(connection)),
             "followup": _normalize_message(followup),
@@ -93,14 +122,15 @@ def generate_messages(target: Dict, profile: Dict, api_key: str) -> Dict[str, st
 
     client = Anthropic(api_key=api_key)
     prompt = (
-        f"Target details:\n{json.dumps(target, ensure_ascii=False)}\n\n"
-        f"Psychological profile:\n{json.dumps(profile, ensure_ascii=False)}"
+        f"Target details:\n{{json.dumps(target, ensure_ascii=False)}}\n\n"
+        f"Psychological profile:\n{{json.dumps(profile, ensure_ascii=False)}}"
     )
+    system_prompt = MESSAGE_PROMPT_BASE.format(signoff=SIGNOFF)
     response = client.messages.create(
         model=MODEL,
         max_tokens=1200,
         temperature=0.7,
-        system=MESSAGE_PROMPT,
+        system=system_prompt,
         messages=[{"role": "user", "content": prompt}],
     )
     text = "".join(
@@ -110,5 +140,12 @@ def generate_messages(target: Dict, profile: Dict, api_key: str) -> Dict[str, st
 
     connection = _enforce_connection_length(_normalize_message(parsed.get("connection", "")))
     followup = _normalize_message(parsed.get("followup", ""))
-    email = _normalize_message(parsed.get("email", ""))
+    raw_email = parsed.get("email", "")
+
+    if big_dinner:
+        raw_email = raw_email.replace(f"\n\n{SIGNOFF}", "").replace(SIGNOFF, "").strip()
+        email = _append_big_dinner(raw_email)
+    else:
+        email = _normalize_message(raw_email)
+
     return {"connection": connection, "followup": followup, "email": email}
