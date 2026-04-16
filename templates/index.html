@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="header-row">
+  <h1>TBD Legal Outreach Engine</h1>
+  <div id="dailyCount" class="daily-count">0 / 150 today</div>
+</section>
+
+<section class="actions">
+  <button id="runDiscoveryBtn">Run Discovery</button>
+  <button id="exportBtn">Export CSV</button>
+  <span id="busy" class="busy hidden">Processing...</span>
+</section>
+
+<section class="forms-grid">
+  <form id="addTargetForm" class="panel">
+    <h2>Manual Target Entry</h2>
+    <input name="name" placeholder="Name" required>
+    <input name="company" placeholder="Company" required>
+    <input name="role" placeholder="Role" required>
+    <input name="location" placeholder="Location" required>
+    <button type="submit">Add + Generate</button>
+  </form>
+
+  <form id="csvForm" class="panel" enctype="multipart/form-data">
+    <h2>Batch CSV Upload</h2>
+    <input type="file" name="file" accept=".csv" required>
+    <button type="submit">Upload CSV</button>
+  </form>
+</section>
+
+<section class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Company</th>
+        <th>Score</th>
+        <th>Psychological Driver</th>
+        <th>Intelligence Hook</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="targetsBody"></tbody>
+  </table>
+</section>
+{% endblock %}
