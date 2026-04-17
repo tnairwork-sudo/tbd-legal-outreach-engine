@@ -122,8 +122,8 @@ def generate_messages(target: Dict, profile: Dict, api_key: str) -> Dict[str, st
 
     client = Anthropic(api_key=api_key)
     prompt = (
-        f"Target details:\n{{json.dumps(target, ensure_ascii=False)}}\n\n"
-        f"Psychological profile:\n{{json.dumps(profile, ensure_ascii=False)}}"
+        f"Target details:\n{json.dumps(target, ensure_ascii=False)}\n\n"
+        f"Psychological profile:\n{json.dumps(profile, ensure_ascii=False)}"
     )
     system_prompt = MESSAGE_PROMPT_BASE.format(signoff=SIGNOFF)
     response = client.messages.create(
