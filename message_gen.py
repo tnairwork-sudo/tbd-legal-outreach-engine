@@ -126,13 +126,16 @@ def generate_messages(target: Dict, profile: Dict, api_key: str) -> Dict[str, st
         f"Psychological profile:\n{json.dumps(profile, ensure_ascii=False)}"
     )
     system_prompt = MESSAGE_PROMPT_BASE.format(signoff=SIGNOFF)
-    response = client.messages.create(
-        model=MODEL,
-        max_tokens=1200,
-        temperature=0.7,
-        system=system_prompt,
-        messages=[{"role": "user", "content": prompt}],
-    )
+    try:
+        response = client.messages.create(
+            model=MODEL,
+            max_tokens=1200,
+            temperature=0.7,
+            system=system_prompt,
+            messages=[{"role": "user", "content": prompt}],
+        )
+    except Exception:
+        return generate_messages(target, profile, "")
     text = "".join(
         block.text for block in response.content if getattr(block, "type", "") == "text"
     )

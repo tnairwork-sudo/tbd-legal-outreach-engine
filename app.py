@@ -47,17 +47,21 @@ init_db(DB_FILE)
 scheduler = start_email_scheduler(DB_FILE, SMTP_CONFIG)
 
 def _process_target(target_id: int) -> Dict:
-    target = get_target(target_id, DB_FILE)
-    if not target:
-        return {"error": "Target not found"}
+    try:
+        target = get_target(target_id, DB_FILE)
+        if not target:
+            return {"error": "Target not found"}
 
-    profile = profile_target(target, os.getenv("ANTHROPIC_API_KEY", ""))
-    update_profile(target_id, profile, DB_FILE)
+        profile = profile_target(target, os.getenv("ANTHROPIC_API_KEY", ""))
+        update_profile(target_id, profile, DB_FILE)
 
-    # Always generate messages regardless of fit score
-    messages = generate_messages(target, profile, os.getenv("ANTHROPIC_API_KEY", ""))
-    replace_messages(target_id, messages, DB_FILE)
-    return {"qualified": True, "fit_score": profile.get("fit_score", 0)}
+        # Always generate messages regardless of fit score
+        messages = generate_messages(target, profile, os.getenv("ANTHROPIC_API_KEY", ""))
+        replace_messages(target_id, messages, DB_FILE)
+        return {"qualified": True, "fit_score": profile.get("fit_score", 0)}
+    except Exception as e:
+        app.logger.exception("Failed to process target %s", target_id)
+        return {"error": str(e), "qualified": False}
 
 def _run_discovery_thread() -> None:
     api_key = os.getenv("SERP_API_KEY", "")
