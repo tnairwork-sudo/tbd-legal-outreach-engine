@@ -1,9 +1,11 @@
 import json
+import logging
 from typing import Dict
 
 from anthropic import Anthropic
 
 MODEL = "claude-3-5-sonnet-20241022"
+logger = logging.getLogger(__name__)
 
 PROFILE_PROMPT = """You are an elite intelligence analyst and psychological profiler. Given a legal professional's details, produce:
 
@@ -69,6 +71,11 @@ def profile_target(target: Dict, api_key: str) -> Dict:
             messages=[{"role": "user", "content": user_content}],
         )
     except Exception:
+        logger.exception(
+            "Failed to generate profile from Anthropic API for target name=%r company=%r",
+            target.get("name", ""),
+            target.get("company", ""),
+        )
         return _extract_json("")
     text = "".join(
         block.text for block in response.content if getattr(block, "type", "") == "text"

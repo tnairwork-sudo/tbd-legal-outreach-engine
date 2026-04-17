@@ -1,9 +1,11 @@
 import json
+import logging
 from typing import Dict
 
 from anthropic import Anthropic
 
 MODEL = "claude-3-5-sonnet-20241022"
+logger = logging.getLogger(__name__)
 SIGNOFF = "Tushaar Nair, Advocate, Supreme Court of India, T Nair Chambers"
 
 BIG_DINNER_CITIES = {"mumbai", "bombay", "delhi", "new delhi"}
@@ -135,6 +137,11 @@ def generate_messages(target: Dict, profile: Dict, api_key: str) -> Dict[str, st
             messages=[{"role": "user", "content": prompt}],
         )
     except Exception:
+        logger.exception(
+            "Failed to generate messages from Anthropic API for target name=%r company=%r",
+            target.get("name", ""),
+            target.get("company", ""),
+        )
         return generate_messages(target, profile, "")
     text = "".join(
         block.text for block in response.content if getattr(block, "type", "") == "text"
