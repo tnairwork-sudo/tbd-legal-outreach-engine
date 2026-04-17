@@ -59,6 +59,6 @@ Then edit `.env` with your keys and SMTP credentials.
 
 ## Notes
 
-- Claude model used for all AI generation: `claude-sonnet-4-20250514`.
+- Claude model used for all AI generation: `claude-3-5-sonnet-20241022`.
 - `/api/run-discovery` runs in a background thread to keep UI responsive.
 - Daily email summary is scheduled with APScheduler for 18:00 local server time.

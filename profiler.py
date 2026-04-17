@@ -3,7 +3,7 @@ from typing import Dict
 
 from anthropic import Anthropic
 
-MODEL = "claude-sonnet-4-20250514"
+MODEL = "claude-3-5-sonnet-20241022"
 
 PROFILE_PROMPT = """You are an elite intelligence analyst and psychological profiler. Given a legal professional's details, produce:
 
@@ -60,13 +60,16 @@ def profile_target(target: Dict, api_key: str) -> Dict:
         f"Industry: {target.get('industry', '')}\n"
     )
 
-    response = client.messages.create(
-        model=MODEL,
-        max_tokens=800,
-        temperature=0.4,
-        system=PROFILE_PROMPT,
-        messages=[{"role": "user", "content": user_content}],
-    )
+    try:
+        response = client.messages.create(
+            model=MODEL,
+            max_tokens=800,
+            temperature=0.4,
+            system=PROFILE_PROMPT,
+            messages=[{"role": "user", "content": user_content}],
+        )
+    except Exception:
+        return _extract_json("")
     text = "".join(
         block.text for block in response.content if getattr(block, "type", "") == "text"
     )
